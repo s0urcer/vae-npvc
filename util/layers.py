@@ -16,7 +16,7 @@ def Layernorm(x, axis, name):
         `x`: channel_first/NCHW format! (or fully-connected)
         `axis`: list
         `name`: must be assigned
-    
+
     Example:
         ```python
         axis = [1, 2, 3]
@@ -26,7 +26,7 @@ def Layernorm(x, axis, name):
     Return:
         (x - u)/s * scale + offset
 
-    Source: 
+    Source:
         https://github.com/igul222/improved_wgan_training/blob/master/tflib/ops/layernorm.py
     '''
     mean, var = tf.nn.moments(x, axis, keep_dims=True)
@@ -42,6 +42,28 @@ def Layernorm(x, axis, name):
         initializer=tf.ones_initializer
     )
     return tf.nn.batch_normalization(x, mean, var, offset, scale, 1e-5)
+
+
+def conv2d_nhwc_layernorm(x, o, k, s, activation, name):
+    '''
+    Input:
+        `x`: input in NHWC format
+        `o`: num of output nodes
+        `k`: kernel size
+        `s`: stride
+    '''
+    with tf.variable_scope(name):
+        x = tf.layers.conv2d(
+            inputs=x,
+            filters=o,
+            kernel_size=k,
+            strides=s,
+            padding='same',
+            data_format='channels_last',
+            name=name,
+        )
+        x = Layernorm(x, [1, 2, 3], 'layernorm')
+        return activation(x)
 
 
 def conv2d_nchw_layernorm(x, o, k, s, activation, name):
@@ -65,21 +87,21 @@ def conv2d_nchw_layernorm(x, o, k, s, activation, name):
         x = Layernorm(x, [1, 2, 3], 'layernorm')
         return activation(x)
 
-              
+
 def selu(x):
     with tf.name_scope('selu'):
         alpha = 1.6732632423543772848170429916717
         scale = 1.0507009873554804934193349852946
         return scale*tf.where(x>=0.0, x, alpha*tf.nn.elu(x))
-    
+
 def selu_normal(seed=None):
     return VarianceScaling(
         scale=1., mode='fan_in', distribution='normal', seed=seed)
 
 def mu_law_encode_nonlinear(audio, quantization_channels=256):
     '''
-    Compress the waveform amplitudes using mu-law non-linearity. 
-    NOTE: This mu-law functions as a non-linear function as opposed to 
+    Compress the waveform amplitudes using mu-law non-linearity.
+    NOTE: This mu-law functions as a non-linear function as opposed to
           quantization.
     '''
     with tf.name_scope('encode'):
@@ -97,7 +119,7 @@ def mu_law_encode_nonlinear(audio, quantization_channels=256):
 
 def mu_law_decode_nonlinear(output, quantization_channels=256):
     '''
-    Uncompress the waveform amplitudes using mu-law non-linearity. 
+    Uncompress the waveform amplitudes using mu-law non-linearity.
     NOTE: This mu-law functions as a non-linear function.
     '''
     with tf.name_scope('decode'):

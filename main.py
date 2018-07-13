@@ -4,10 +4,8 @@ import json
 import tensorflow as tf
 import numpy as np
 
-# from model.vae import VAWGAN
 from analyzer import read, Tanhize
-from util.wrapper import save, validate_log_dirs #, load, configure_gpu_settings, restore_global_step
-# from trainer.vae import VAWGANTrainer
+from util.wrapper import save, validate_log_dirs
 from importlib import import_module
 
 args = tf.app.flags.FLAGS

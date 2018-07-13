@@ -36,16 +36,16 @@ def make_output_wav_name(output_dir, filename):
     basename = str(filename, 'utf8')
     basename = os.path.split(basename)[-1]
     basename = os.path.splitext(basename)[0]
-    print('Processing {}'.format(basename))        
+    print('Processing {}'.format(basename))
     return os.path.join(
-        output_dir, 
+        output_dir,
         '{}-{}-{}.wav'.format(args.src, args.trg, basename)
     )
 
 def get_default_output(logdir_root):
     STARTED_DATESTRING = datetime.now().strftime('%0m%0d-%0H%0M-%0S-%Y')
     logdir = os.path.join(logdir_root, 'output', STARTED_DATESTRING)
-    print('Using default logdir: {}'.format(logdir))        
+    print('Using default logdir: {}'.format(logdir))
     return logdir
 
 def convert_f0(f0, src, trg):
@@ -62,6 +62,11 @@ def nh_to_nchw(x):
         x = tf.expand_dims(x, 1)      # [b, h] => [b, c=1, h]
         return tf.expand_dims(x, -1)  # => [b, c=1, h, w=1]
 
+def nh_to_nhwc(x):
+    with tf.name_scope('NH_to_NHWC'):
+        x = tf.expand_dims(x, -1)      # [b, h] => [b, h, c=1]
+        return tf.expand_dims(x, -1)  # => [b, h, c=1, w=1]
+
 
 def main():
     logdir, ckpt = os.path.split(args.checkpoint)
@@ -77,7 +82,8 @@ def main():
     features = read_whole_features(args.file_pattern.format(args.src))
 
     x = normalizer.forward_process(features['sp'])
-    x = nh_to_nchw(x)
+    x = nh_to_nhwc(x)
+
     y_s = features['speaker']
     y_t_id = tf.placeholder(dtype=tf.int64, shape=[1,])
     y_t = y_t_id * tf.ones(shape=[tf.shape(x)[0],], dtype=tf.int64)

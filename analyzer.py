@@ -20,6 +20,7 @@ FFT_SIZE = 1024
 SP_DIM = FFT_SIZE // 2 + 1
 FEAT_DIM = SP_DIM + SP_DIM + 1 + 1 + 1  # [sp, ap, f0, en, s]
 RECORD_BYTES = FEAT_DIM * 4  # all features saved in `float32`
+FORMAT = 'NHWC' #'NCHW'
 
 
 def wav2pw(x, fs=16000, fft_size=FFT_SIZE):
@@ -36,7 +37,7 @@ def wav2pw(x, fs=16000, fft_size=FFT_SIZE):
 
 
 def extract(filename, fft_size=FFT_SIZE, dtype=np.float32):
-    ''' Basic (WORLD) feature extraction ''' 
+    ''' Basic (WORLD) feature extraction '''
     x, _ = librosa.load(filename, sr=args.fs, mono=True, dtype=np.float64)
     features = wav2pw(x, args.fs, fft_size=fft_size)
     ap = features['ap']
@@ -78,7 +79,7 @@ class Tanhize(object):
         self.xmin = xmin
         self.xmax = xmax
         self.xscale = xmax - xmin
-    
+
     def forward_process(self, x):
         x = (x - self.xmin) / self.xscale
         return tf.clip_by_value(x, 0., 1.) * 2. - 1.
@@ -94,14 +95,15 @@ def read(
     capacity=256,
     min_after_dequeue=128,
     num_threads=8,
-    format='NCHW',
+    format=FORMAT,
     normalizer=None,
     ):
-    ''' 
-    Read only `sp` and `speaker` 
+    '''
+    Read only `sp` and `speaker`
     Return:
         `feature`: [b, c]
         `speaker`: [b,]
+    Used for training.
     '''
     with tf.name_scope('InputSpectralFrame'):
         files = tf.gfile.Glob(file_pattern)
@@ -139,6 +141,7 @@ def read_whole_features(file_pattern, num_epochs=1):
     '''
     Return
         `feature`: `dict` whose keys are `sp`, `ap`, `f0`, `en`, `speaker`
+    Used for conversion and stats.
     '''
     files = tf.gfile.Glob(file_pattern)
     print('{} files found'.format(len(files)))

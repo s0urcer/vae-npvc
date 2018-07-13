@@ -72,7 +72,7 @@ class ConvVAE(object):
     def _encoder(self, x, is_training=None):
         net = self.arch['encoder']
         for i, (o, k, s) in enumerate(zip(net['output'], net['kernel'], net['stride'])):
-            x = conv2d_nchw_layernorm(
+            x = conv2d_nhwc_layernorm(
                 x, o, k, s, lrelu,
                 name='Conv2d-{}'.format(i)
             )
@@ -91,11 +91,11 @@ class ConvVAE(object):
         else:
             x = z
 
-        x = tf.reshape(x, [-1, c, h, w])  # channel first
+        x = tf.reshape(x, [-1, h, w, c])  # channel last
         for i, (o, k, s) in enumerate(zip(net['output'], net['kernel'], net['stride'])):
             x = tf.layers.conv2d_transpose(x, o, k, s,
                 padding='same',
-                data_format='channels_first',
+                data_format='channels_last',
             )
             if i < len(net['output']) -1:
                 x = Layernorm(x, [1, 2, 3], 'ConvT-LN{}'.format(i))
@@ -136,10 +136,14 @@ class ConvVAE(object):
         tf.summary.histogram('x', x)
         return loss
 
+
     def encode(self, x):
         z_mu, _ = self._encode(x)
         return z_mu
 
+
     def decode(self, z, y):
         xh = self._generate(z, y)
-        return nchw_to_nhwc(xh)
+        return xh #nchw_to_nhwc(xh)
+
+

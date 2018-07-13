@@ -36,13 +36,7 @@ class VAETrainer(GANTrainer):
         }
         result = sess.run(
             fetches=fetches,
-            # options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
-            # run_metadata=run_metadata,
         )
-
-        # trace = timeline.Timeline(step_stats=run_metadata.step_stats)
-        # with open(os.path.join(dirs['logdir'], 'timeline.ctf.json'), 'w') as fp:
-        #     fp.write(trace.generate_chrome_trace_format())
 
         # Message
         msg = 'Iter {:05d}: '.format(result['step'])
@@ -52,23 +46,6 @@ class VAETrainer(GANTrainer):
         logging.info(msg)
 
 
-    # def _validate(self, machine, n=10):
-    #     N = n * n
-
-    #     # same row same z
-    #     z = tf.random_normal(shape=[n, self.arch['z_dim']])
-    #     z = tf.tile(z, [1, n])
-    #     z = tf.reshape(z, [N, -1])
-    #     z = tf.Variable(z, trainable=False, dtype=tf.float32)
-
-    #     # same column same y
-    #     y = tf.range(0, 10, 1, dtype=tf.int64)
-    #     y = tf.reshape(y, [-1,])
-    #     y = tf.tile(y, [n,])
-
-    #     Xh = machine.generate(z, y) # 100, 64, 64, 3
-    #     Xh = make_png_thumbnail(Xh, n)
-    #     return Xh
 
     def train(self, nIter, machine=None, summary_op=None):
         # Xh = self._validate(machine=machine, n=10)
@@ -77,14 +54,10 @@ class VAETrainer(GANTrainer):
 
         sv = tf.train.Supervisor(
             logdir=self.dirs['logdir'],
-            # summary_writer=summary_writer,
-            # summary_op=None,
-            # is_chief=True,
             save_model_secs=300,
             global_step=self.opt['global_step'])
 
 
-        # sess_config = configure_gpu_settings(args.gpu_cfg)
         sess_config = tf.ConfigProto(
             allow_soft_placement=True,
             gpu_options=tf.GPUOptions(allow_growth=True))
@@ -97,19 +70,6 @@ class VAETrainer(GANTrainer):
 
                 # main loop
                 sess.run(self.opt['g'])
-
-                # # output img
-                # if step % 1000 == 0:
-                #     xh = sess.run(Xh)
-                #     with tf.gfile.GFile(
-                #         os.path.join(
-                #             self.dirs['logdir'],
-                #             'img-anime-{:03d}k.png'.format(step // 1000),
-                #         ),
-                #         mode='wb',
-                #     ) as fp:
-                #         fp.write(xh)
-
 
 
 class VAWGANTrainer(GANTrainer):
@@ -147,18 +107,10 @@ class VAWGANTrainer(GANTrainer):
         }
 
     def train(self, nIter, machine=None, summary_op=None):
-        # Xh = self._validate(machine=machine, n=10)
-
         run_metadata = tf.RunMetadata()
-
-        # summary_op = tf.summary.merge_all()
 
         sv = tf.train.Supervisor(
             logdir=self.dirs['logdir'],
-            # summary_writer=summary_writer,
-            # summary_op=None,
-            # is_chief=True,
-            # save_model_secs=600,
             global_step=self.opt['global_step'])
 
 
@@ -178,18 +130,6 @@ class VAWGANTrainer(GANTrainer):
                     sess.run(self.opt['d'])
                 sess.run(self.opt['g'])
 
-                # # output img
-                # if step % 1000 == 0:
-                #     xh = sess.run(Xh)
-                #     with tf.gfile.GFile(
-                #         os.path.join(
-                #             self.dirs['logdir'],
-                #             'img-anime-{:03d}k.png'.format(step // 1000),
-                #         ),
-                #         mode='wb',
-                #     ) as fp:
-                #         fp.write(xh)
-
     def _refresh_status(self, sess):
         fetches = {
             "D_KL": self.loss['D_KL'],
@@ -200,13 +140,7 @@ class VAWGANTrainer(GANTrainer):
         }
         result = sess.run(
             fetches=fetches,
-            # options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
-            # run_metadata=run_metadata,
         )
-
-        # trace = timeline.Timeline(step_stats=run_metadata.step_stats)
-        # with open(os.path.join(dirs['logdir'], 'timeline.ctf.json'), 'w') as fp:
-        #     fp.write(trace.generate_chrome_trace_format())
 
         # Message
         msg = 'Iter {:05d}: '.format(result['step'])
@@ -216,3 +150,4 @@ class VAWGANTrainer(GANTrainer):
         msg += 'GP = {:.4e} '.format(result['gp'])
         print('\r{}'.format(msg), end='', flush=True)
         logging.info(msg)
+
